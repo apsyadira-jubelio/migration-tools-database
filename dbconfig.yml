@@ -1,0 +1,14 @@
+development:
+  dialect: postgres
+  datasource: dbname=jb_tenant sslmode=disable
+  dir: migrations/tenants
+
+tenantdb:
+  dialect: postgres
+  datasource: dbname=jb_tenant sslmode=disable
+  dir: migrations/tenants
+
+systemdb:
+  dialect: postgres
+  datasource: host=${DB_HOST} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD} sslmode=disable
+  dir: migrations/system
