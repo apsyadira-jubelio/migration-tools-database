@@ -2,16 +2,18 @@ package command
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strings"
-	"sync"
+	"text/tabwriter"
 
 	"github.com/apsyadira-jubelio/migration-tools-database/driver"
+	"github.com/apsyadira-jubelio/migration-tools-database/utils"
 	"github.com/mitchellh/cli"
 )
 
 type MigrateAllTenants struct {
-	Ui cli.Ui
+	Ui *cli.BasicUi
 }
 
 type Tenants struct {
@@ -55,13 +57,16 @@ func (c *MigrateAllTenants) Run(args []string) int {
 		tenants = append(tenants, tenant)
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(tenants))
+	tw := tabwriter.NewWriter(c.Ui.Writer, 0, 0, 3, ' ', 0)
+	defer tw.Flush()
+	fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	for _, data := range tenants {
+		fmt.Println("Hostname", data.Host, "Schemaname", data.SchemaName)
+		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 		tenantDb := driver.PostgreDbClient(data.Host, os.Getenv("DB_TENANT_PORT"), os.Getenv("DB_TENANT_USER"), os.Getenv("DB_TENANT_PASSWORD"), os.Getenv("DB_TENANT_NAME"))
-		go driver.CreatePostgreSchema(tenantDb, data.SchemaName, &wg)
+		driver.CreatePostgreSchema(tenantDb, data.SchemaName)
+		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	}
-	wg.Wait()
 	return 0
 }
 

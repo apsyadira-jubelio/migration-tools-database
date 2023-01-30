@@ -15,11 +15,9 @@ func main() {
 	os.Exit(realMain())
 }
 
-var ui cli.Ui
-
 func realMain() int {
 
-	ui = &cli.BasicUi{Writer: os.Stdout}
+	ui := &cli.BasicUi{Writer: os.Stdout, ErrorWriter: os.Stderr}
 
 	cli := &cli.CLI{
 		Args: os.Args[1:],

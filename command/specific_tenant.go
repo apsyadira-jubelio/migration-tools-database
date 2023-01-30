@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
+	"log"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/apsyadira-jubelio/migration-tools-database/driver"
 	"github.com/mitchellh/cli"
@@ -48,22 +48,17 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.Ui.Error("Tenant not found")
+			log.Fatalf("Tenant %s not found", cmdFlags.Arg(0))
 			return 1
 		} else {
-			c.Ui.Error(err.Error())
+			log.Fatalf(err.Error())
 			return 1
 		}
 
 	}
 
 	tenantDb := driver.PostgreDbClient(tenantData.Host, os.Getenv("DB_TENANT_PORT"), os.Getenv("DB_TENANT_USER"), os.Getenv("DB_TENANT_PASSWORD"), os.Getenv("DB_TENANT_NAME"))
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		driver.CreatePostgreSchema(tenantDb, tenantData.SchemaName, &wg)
-	}()
-	wg.Wait()
+	driver.CreatePostgreSchema(tenantDb, tenantData.SchemaName)
 
 	return 0
 }

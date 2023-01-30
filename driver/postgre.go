@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"sync"
 
 	migrate "github.com/rubenv/sql-migrate"
 )
@@ -32,22 +31,20 @@ func PostgreDbClient(host, port, user, password, database string) *sql.DB {
 	return db
 }
 
-func CreatePostgreSchema(db *sql.DB, schemaName string, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	log.Println("Run migrations & create schema")
+func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
+	log.Printf("Run migrations & create schema of %s", schemaName)
 
 	schemaSql := []string{
 		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s AUTHORIZATION %s;`, schemaName, os.Getenv("DB_TENANT_USER")),
 		fmt.Sprintf("SET search_path TO %s, pg_catalog;", schemaName),
 	}
 
-	for _, cmd := range schemaSql {
-		stmt, err := db.Prepare(cmd)
+	for _, stringCmd := range schemaSql {
+		stmt, err := db.Prepare(stringCmd)
 
 		if err != nil {
 			log.Fatalf("Error preparing statement: %v", err)
-			return
+			return err
 		}
 
 		defer stmt.Close()
@@ -55,17 +52,21 @@ func CreatePostgreSchema(db *sql.DB, schemaName string, wg *sync.WaitGroup) {
 		_, err = stmt.Exec()
 		if err != nil {
 			log.Fatalf("Error executing statement: %v", err)
-			return
+			return err
 		}
 	}
 
 	log.Printf("Schema %s created successfully", schemaName)
 	MigrationDbTenant(db)
+
+	return
 }
 
 func DBSystemMigrate(db *sql.DB) {
-	var migrations = &migrate.FileMigrationSource{
-		Dir: "migrations/system",
+
+	migrationsDir := path.Join("./migrations/system")
+	migrations := &migrate.FileMigrationSource{
+		Dir: migrationsDir,
 	}
 
 	n, err := migrate.Exec(db, "postgres", migrations, migrate.Up)
@@ -78,15 +79,18 @@ func DBSystemMigrate(db *sql.DB) {
 
 // Refactoring this code if database staging already setup
 func MigrationDbTenant(db *sql.DB) {
-	log.Println("prepare to migrate")
-	var migrations = &migrate.FileMigrationSource{
-		Dir: path.Join("./migrations/tenants"),
+	log.Println("preparing to run migration")
+	migrationsDir := path.Join("./migrations/tenants")
+	migrations := &migrate.FileMigrationSource{
+		Dir: migrationsDir,
 	}
 
 	n, err := migrate.Exec(db, "postgres", migrations, migrate.Up)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Error excute migration sql for tenant, %s", err.Error()))
+		log.Fatalf(fmt.Sprintf("Error excute migration SQL for tenant, %s", err.Error()))
 	} else {
 		log.Println("Applied " + strconv.Itoa(n) + " migrations!")
+		log.Println("Migration successfully")
 	}
+
 }
