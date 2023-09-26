@@ -43,18 +43,18 @@ func LoadPath(path string) error {
 		log.Fatalf("Error reading config file, %s", err)
 	}
 
-	// Replace placeholders with environment variable values
-	datasource := viper.GetString("systemdb.datasource")
-	datasource = os.ExpandEnv(datasource) // Replace ${VAR} with the actual environment variable value
-
-	println(datasource)
-
 	err = viper.Unmarshal(&Config)
 	if err != nil {
 		return err
 	}
 
-	Config.System.Datasource = datasource
+	// Replace placeholders with environment variable values
+	systemdbDataSource := viper.GetString("systemdb.datasource")
+	tenantdbDataSource := viper.GetString("tenantdb.datasource")
+	systemdbDataSource = os.ExpandEnv(systemdbDataSource) // Replace ${VAR} with the actual environment variable value
+	tenantdbDataSource = os.ExpandEnv(tenantdbDataSource) // Replace ${VAR} with the actual environment variable value
+	Config.System.Datasource = systemdbDataSource
+	Config.Tenant.Datasource = tenantdbDataSource
 
 	return nil
 }

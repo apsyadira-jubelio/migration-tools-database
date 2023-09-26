@@ -5,10 +5,10 @@ development:
 
 tenantdb:
   dialect: postgres
-  datasource: host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD} sslmode=disable
+  datasource: host=${TENANT_DB_HOST} port=${TENANT_DB_PORT} user=${TENANT_DB_USER} password=${TENANT_DB_PASSWORD} dbname=${TENANT_DB_NAME} sslmode=disable
   dir: migrations/tenants
 
 systemdb:
   dialect: postgres
-  datasource: host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD} sslmode=disable
+  datasource: host=${SYSTEM_DB_HOST} port=${SYSTEM_DB_PORT} user=${SYSTEM_DB_USER} password=${SYSTEM_DB_PASSWORD} dbname=${SYSTEM_DBNAME} sslmode=disable
   dir: migrations/system
