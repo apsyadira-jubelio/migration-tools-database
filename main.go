@@ -5,13 +5,13 @@ import (
 	"os"
 
 	"github.com/apsyadira-jubelio/migration-tools-database/command"
-	"github.com/joho/godotenv"
+	"github.com/apsyadira-jubelio/migration-tools-database/config"
 	_ "github.com/lib/pq"
 	"github.com/mitchellh/cli"
 )
 
 func main() {
-	godotenv.Load()
+	config.Load()
 	os.Exit(realMain())
 }
 

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"flag"
 	"log"
-	"os"
 	"strings"
 
+	"github.com/apsyadira-jubelio/migration-tools-database/config"
 	"github.com/apsyadira-jubelio/migration-tools-database/driver"
 	"github.com/mitchellh/cli"
 )
@@ -28,6 +28,7 @@ Options:
 }
 
 func (c *MigrateSpecificTenant) Run(args []string) int {
+
 	cmdFlags := flag.NewFlagSet("new", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 
@@ -41,7 +42,7 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 		return 1
 	}
 
-	systemDb := driver.PostgreDbClient(os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
 
 	var tenantData Tenants
 	err := systemDb.QueryRow("select schema_name, hostname from users where schema_name = $1", cmdFlags.Arg(0)).Scan(&tenantData.SchemaName, &tenantData.Host)
@@ -57,7 +58,7 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 
 	}
 
-	tenantDb := driver.PostgreDbClient(tenantData.Host, os.Getenv("DB_TENANT_PORT"), os.Getenv("DB_TENANT_USER"), os.Getenv("DB_TENANT_PASSWORD"), os.Getenv("DB_TENANT_NAME"))
+	tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
 	driver.CreatePostgreSchema(tenantDb, tenantData.SchemaName)
 
 	return 0

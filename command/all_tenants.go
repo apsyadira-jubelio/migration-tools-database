@@ -3,10 +3,10 @@ package command
 import (
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/apsyadira-jubelio/migration-tools-database/config"
 	"github.com/apsyadira-jubelio/migration-tools-database/driver"
 	"github.com/apsyadira-jubelio/migration-tools-database/utils"
 	"github.com/mitchellh/cli"
@@ -32,10 +32,11 @@ Usage: jb-chat-migrate all-tenants
 }
 
 func (c *MigrateAllTenants) Run(args []string) int {
+
 	cmdFlags := flag.NewFlagSet("new", flag.ContinueOnError)
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 
-	systemDb := driver.PostgreDbClient(os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
 
 	var tenants = []Tenants{}
 
@@ -63,7 +64,7 @@ func (c *MigrateAllTenants) Run(args []string) int {
 	for _, data := range tenants {
 		fmt.Println("Hostname", data.Host, "Schemaname", data.SchemaName)
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
-		tenantDb := driver.PostgreDbClient(data.Host, os.Getenv("DB_TENANT_PORT"), os.Getenv("DB_TENANT_USER"), os.Getenv("DB_TENANT_PASSWORD"), os.Getenv("DB_TENANT_NAME"))
+		tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
 		driver.CreatePostgreSchema(tenantDb, data.SchemaName)
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	}

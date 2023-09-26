@@ -11,12 +11,8 @@ import (
 	migrate "github.com/rubenv/sql-migrate"
 )
 
-func PostgreDbClient(host, port, user, password, database string) *sql.DB {
-	connString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, database,
-	)
-
-	db, err := sql.Open("postgres", connString)
+func PostgreDbClient(dataSource string) *sql.DB {
+	db, err := sql.Open("postgres", dataSource)
 
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("error, not connected to database, %s", err.Error()))
