@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"path"
 	"strconv"
 
@@ -31,7 +30,7 @@ func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
 	log.Printf("Run migrations & create schema of %s", schemaName)
 
 	schemaSql := []string{
-		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s AUTHORIZATION %s;`, schemaName, os.Getenv("DATABASE_TENANT_DBNAME")),
+		fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS %s AUTHORIZATION %s;`, schemaName, "jb_tenant_chat"),
 		fmt.Sprintf("SET search_path TO %s, pg_catalog;", schemaName),
 	}
 
