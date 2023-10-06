@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"strings"
 
@@ -42,6 +43,7 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 		return 1
 	}
 
+	fmt.Println(config.Config.System.Datasource)
 	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
 
 	var tenantData Tenants
