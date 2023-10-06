@@ -21,6 +21,7 @@ type Tenants struct {
 	SchemaName string
 	Host       string
 	Port       string
+	DBName     string
 }
 
 func (c *MigrateAllTenants) Help() string {

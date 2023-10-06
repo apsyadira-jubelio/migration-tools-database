@@ -17,6 +17,7 @@ type config struct {
 }
 
 type database struct {
+	DBName     string `mapstructure:"dbname"`
 	Datasource string `mapstructure:"datasource"`
 }
 
