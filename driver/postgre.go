@@ -58,7 +58,7 @@ func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
 	}
 
 	log.Printf("Schema %s created successfully", schemaName)
-	go MigrationDbTenant(db)
+	MigrationDbTenant(db)
 
 	return
 }
