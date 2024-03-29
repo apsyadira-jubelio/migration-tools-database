@@ -49,10 +49,19 @@ func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
 		fmt.Sprintf("SET search_path TO %s, pg_catalog;", schemaName),
 	}
 
-	for _, sqlCmd := range schemaSql {
-		// Execute SQL command
-		if _, err := db.Exec(sqlCmd); err != nil {
-			log.Printf("Error executing statement: %v", err)
+	for _, stringCmd := range schemaSql {
+		stmt, err := db.Prepare(stringCmd)
+
+		if err != nil {
+			log.Fatalf("Error preparing statement: %v", err)
+			return err
+		}
+
+		defer stmt.Close()
+
+		_, err = stmt.Exec()
+		if err != nil {
+			log.Fatalf("Error executing statement: %v", err)
 			return err
 		}
 	}
