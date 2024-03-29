@@ -38,7 +38,7 @@ func (c *MigrateAllTenants) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 
 	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
-
+	defer systemDb.Close()
 	var tenants = []Tenants{}
 
 	sqlString := "select email, schema_name, hostname from users where is_owner is true"
@@ -60,14 +60,27 @@ func (c *MigrateAllTenants) Run(args []string) int {
 	}
 
 	tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
+	defer tenantDb.Close()
+
+	if !driver.EnsureDbConnection(tenantDb, 3) {
+		c.Ui.Error("Failed to reconnect to tenant database")
+		return 1
+	}
 
 	tw := tabwriter.NewWriter(c.Ui.Writer, 0, 0, 3, ' ', 0)
 	defer tw.Flush()
+
 	fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	for _, data := range tenants {
 		fmt.Println("Hostname", data.Host, "Schemaname", data.SchemaName)
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
-		driver.CreatePostgreSchema(tenantDb, data.SchemaName)
+
+		// Create schema for tenant database
+		if err := driver.CreatePostgreSchema(tenantDb, data.SchemaName); err != nil {
+			fmt.Println("Error create schema. Skip this tenant")
+			continue
+		}
+
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	}
 	return 0

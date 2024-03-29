@@ -19,18 +19,26 @@ func PostgreDbClient(dataSource string) *sql.DB {
 		log.Fatalf(fmt.Sprintf("error, not connected to database, %s", err.Error()))
 	}
 
-	db.SetMaxOpenConns(15)
-	db.SetMaxIdleConns(15)
-	db.SetConnMaxLifetime(5 * time.Minute)
-
-	defer db.Close() // close database connection
-
-	// Try to ping database.
-	if err := db.Ping(); err != nil {
-		log.Fatalf(fmt.Sprintf("error, not sent ping to database, %s", err.Error()))
-	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(2 * time.Minute)
 
 	return db
+}
+
+// ensureDbConnection attempts to ping the database to verify connection is alive, and retries if not.
+func EnsureDbConnection(db *sql.DB, maxRetries int) bool {
+	for i := 0; i < maxRetries; i++ {
+		err := db.Ping()
+		if err == nil {
+			return true // Connection is alive
+		}
+
+		log.Printf("Failed to ping DB, retrying in 5 seconds... (%v)", err)
+		time.Sleep(5 * time.Second)
+	}
+
+	return false
 }
 
 func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
@@ -41,19 +49,10 @@ func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
 		fmt.Sprintf("SET search_path TO %s, pg_catalog;", schemaName),
 	}
 
-	for _, stringCmd := range schemaSql {
-		stmt, err := db.Prepare(stringCmd)
-
-		if err != nil {
-			log.Fatalf("Error preparing statement: %v", err)
-			return err
-		}
-
-		defer stmt.Close()
-
-		_, err = stmt.Exec()
-		if err != nil {
-			log.Fatalf("Error executing statement: %v", err)
+	for _, sqlCmd := range schemaSql {
+		// Execute SQL command
+		if _, err := db.Exec(sqlCmd); err != nil {
+			log.Printf("Error executing statement: %v", err)
 			return err
 		}
 	}
