@@ -27,6 +27,13 @@ func (c *MigrateDbSystem) Run(args []string) int {
 	cmdFlags.Usage = func() { c.Ui.Output(c.Help()) }
 
 	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
+	defer systemDb.Close()
+
+	if !driver.EnsureDbConnection(systemDb, 3) {
+		c.Ui.Error("Failed to reconnect to system database")
+		return 1
+	}
+
 	driver.DBSystemMigrate(systemDb)
 
 	return 0

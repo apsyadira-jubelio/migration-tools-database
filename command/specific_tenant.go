@@ -46,6 +46,13 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 	fmt.Println(config.Config.System.Datasource)
 	systemDb := driver.PostgreDbClient(config.Config.System.Datasource)
 
+	defer systemDb.Close()
+
+	if !driver.EnsureDbConnection(systemDb, 3) {
+		c.Ui.Error("Failed to reconnect to system database")
+		return 1
+	}
+
 	var tenantData Tenants
 	err := systemDb.QueryRow("select schema_name, hostname from users where schema_name = $1", cmdFlags.Arg(0)).Scan(&tenantData.SchemaName, &tenantData.Host)
 
@@ -61,7 +68,17 @@ func (c *MigrateSpecificTenant) Run(args []string) int {
 	}
 
 	tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
-	driver.CreatePostgreSchema(tenantDb, tenantData.SchemaName)
+	defer tenantDb.Close()
+
+	if !driver.EnsureDbConnection(tenantDb, 3) {
+		c.Ui.Error("Failed to reconnect to tenant database")
+		return 1
+	}
+
+	if err := driver.CreatePostgreSchema(tenantDb, tenantData.SchemaName); err != nil {
+		c.Ui.Error(err.Error())
+		return 1
+	}
 
 	return 0
 }
