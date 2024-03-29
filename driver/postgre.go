@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 
 	migrate "github.com/rubenv/sql-migrate"
 )
@@ -18,9 +19,14 @@ func PostgreDbClient(dataSource string) *sql.DB {
 		log.Fatalf(fmt.Sprintf("error, not connected to database, %s", err.Error()))
 	}
 
+	db.SetMaxOpenConns(15)
+	db.SetMaxIdleConns(15)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	defer db.Close() // close database connection
+
 	// Try to ping database.
 	if err := db.Ping(); err != nil {
-		defer db.Close() // close database connection
 		log.Fatalf(fmt.Sprintf("error, not sent ping to database, %s", err.Error()))
 	}
 
@@ -53,7 +59,7 @@ func CreatePostgreSchema(db *sql.DB, schemaName string) (err error) {
 	}
 
 	log.Printf("Schema %s created successfully", schemaName)
-	MigrationDbTenant(db)
+	go MigrationDbTenant(db)
 
 	return
 }

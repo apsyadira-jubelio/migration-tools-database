@@ -59,13 +59,14 @@ func (c *MigrateAllTenants) Run(args []string) int {
 		tenants = append(tenants, tenant)
 	}
 
+	tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
+
 	tw := tabwriter.NewWriter(c.Ui.Writer, 0, 0, 3, ' ', 0)
 	defer tw.Flush()
 	fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	for _, data := range tenants {
 		fmt.Println("Hostname", data.Host, "Schemaname", data.SchemaName)
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
-		tenantDb := driver.PostgreDbClient(config.Config.Tenant.Datasource)
 		driver.CreatePostgreSchema(tenantDb, data.SchemaName)
 		fmt.Fprintln(tw, strings.Repeat("-", utils.GetTerminalWidth()))
 	}
